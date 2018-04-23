@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 
+use App\Http\Requests\EditUserRequest;
 use App\Http\Requests\UsersRequest;
 use App\Photo;
 use App\Role;
@@ -38,6 +39,10 @@ class AdminUsersController extends Controller
      */
     public function create()
     {
+        //it is used for the select option for the form where 3 role are shown like
+        //admin,subs,auth then user will select admin or whatever.
+        //so we will get the roles from the data base with the exaclty same formate of name,id this formate
+        //will help to display the value and the role in the drop down.
         $roles = Role::lists('name','id')->all();
         return view('admin.users.create',compact('roles'));
     }
@@ -50,9 +55,17 @@ class AdminUsersController extends Controller
      */
     public function store(UsersRequest $request)
     {
-        $input = $request->all();
 
-        $input['password'] = bcrypt($request->password);
+        if (trim($request->password) == ''){
+
+            $input = $request->except('password');
+
+        }else{
+
+            $input = $request->all();
+            $input['password'] = bcrypt($request->password);
+        }
+
 
         $file = $request->file('photo_id');
 
@@ -97,8 +110,11 @@ class AdminUsersController extends Controller
      */
     public function edit($id)
     {
-        //
-        return view('admin.user.edit');
+        $user = User::findOrFail($id);
+
+        $roles = Role::lists('name','id')->all();
+
+        return view('admin.users.edit',compact('user','roles'));
     }
 
     /**
@@ -108,9 +124,33 @@ class AdminUsersController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(EditUserRequest $request, $id)
     {
         //
+        $user = User::findOrFail($id);
+        if (trim($request->password) == ''){
+
+            $input = $request->except('password');
+
+        }else{
+
+            $input = $request->all();
+            $input['password'] = bcrypt($request->password);
+        }
+
+
+
+        $input = $request->all();
+        if($file = $request->file('photo_id')){
+            $name = time(). $file->getClientOriginalName();
+            $file->move('images',$name);
+            $photo = Photo::create(['file'=>$name]);
+            $input['photo_id'] = $photo->id;
+        }
+
+        $user->update($input);
+
+        return redirect('/admin/users');
     }
 
     /**
