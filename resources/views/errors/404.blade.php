@@ -1,3 +1,10 @@
-<h1>Custom 404 page</h1>
+@extends('layouts.app')
 
-<h2>Page or the route does not found!!</h2>
+@section('content')
+
+
+    <h1 class="text-center">Opps no page available</h1>
+
+
+
+@endsection
