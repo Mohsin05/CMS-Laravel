@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Category;
 use App\Http\Requests\PostCreateRequest;
 use App\Photo;
 use App\Post;
@@ -36,7 +37,9 @@ class AdminPostsController extends Controller
     {
         //
 
-        return view('admin.posts.create');
+        $categories = Category::lists('name','id')->all();
+
+        return view('admin.posts.create',compact('categories'));
     }
 
     /**
@@ -100,6 +103,11 @@ class AdminPostsController extends Controller
     public function edit($id)
     {
         //
+
+        $post = Post::findOrFail($id);
+        $categories = Category::lists('name','id')->all();
+
+        return view('admin.posts.edit',compact('post','categories'));
     }
 
     /**
@@ -111,7 +119,29 @@ class AdminPostsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+
+        $input = $request->all();
+
+        $user = Auth::user();
+
+        $file = $request->file('photo_id');
+
+        if($file){
+
+            $name = time() . $file->getClientOriginalName();
+
+            $file->move('images',$name);
+
+            $photo = Photo::create(['file'=>$name]);
+
+            $input['photo_id'] = $photo->id;
+
+        }
+
+        Auth::user()->posts()->whereId($id)->first()->update($input);
+
+        return redirect('/admin/posts');
+
     }
 
     /**
@@ -123,5 +153,20 @@ class AdminPostsController extends Controller
     public function destroy($id)
     {
         //
+
+        //
+        $posts =  Post::findOrFail($id);
+
+        //to also remove the images from the image folder on delete of the user delete3
+
+      //  unlink(public_path() . $posts->photo->file);
+
+        $posts->delete();
+
+        //Session::flash('deleted_post','The Post has been deleted');
+
+        return redirect ('/admin/posts');
+
+
     }
 }
